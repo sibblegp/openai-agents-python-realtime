@@ -4,6 +4,9 @@ The OpenAI Agents SDK is a lightweight yet powerful framework for building multi
 
 <img src="https://cdn.openai.com/API/docs/images/orchestration.png" alt="Image of the Agents Tracing UI" style="max-height: 803px;">
 
+> [!NOTE]
+> Looking for the JavaScript/TypeScript version? Check out [Agents SDK JS/TS](https://github.com/openai/openai-agents-js).
+
 ### Core concepts:
 
 1. [**Agents**](https://openai.github.io/openai-agents-python/agents): LLMs configured with instructions, tools, guardrails, and handoffs
@@ -17,14 +20,21 @@ Explore the [examples](examples) directory to see the SDK in action, and read ou
 
 1. Set up your Python environment
 
-```
+- Option A: Using venv (traditional method)
+```bash
 python -m venv env
-source env/bin/activate
+source env/bin/activate  # On Windows: env\Scripts\activate
+```
+
+- Option B: Using uv (recommended)
+```bash
+uv venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 ```
 
 2. Install Agents SDK
 
-```
+```bash
 pip install openai-agents
 ```
 
@@ -47,7 +57,7 @@ print(result.final_output)
 
 (_If running this, ensure you set the `OPENAI_API_KEY` environment variable_)
 
-(_For Jupyter notebook users, see [hello_world_jupyter.py](examples/basic/hello_world_jupyter.py)_)
+(_For Jupyter notebook users, see [hello_world_jupyter.ipynb](examples/basic/hello_world_jupyter.ipynb)_)
 
 ## Handoffs example
 

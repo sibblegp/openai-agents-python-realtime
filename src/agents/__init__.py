@@ -14,6 +14,7 @@ from .exceptions import (
     MaxTurnsExceeded,
     ModelBehaviorError,
     OutputGuardrailTripwireTriggered,
+    RunErrorDetails,
     UserError,
 )
 from .guardrail import (
@@ -44,6 +45,8 @@ from .models.interface import Model, ModelProvider, ModelTracing
 from .models.openai_chatcompletions import OpenAIChatCompletionsModel
 from .models.openai_provider import OpenAIProvider
 from .models.openai_responses import OpenAIResponsesModel
+from .prompts import DynamicPromptFunction, GenerateDynamicPromptData, Prompt
+from .repl import run_demo_loop
 from .result import RunResult, RunResultStreaming
 from .run import RunConfig, Runner
 from .run_context import RunContextWrapper, TContext
@@ -54,10 +57,19 @@ from .stream_events import (
     StreamEvent,
 )
 from .tool import (
+    CodeInterpreterTool,
     ComputerTool,
     FileSearchTool,
     FunctionTool,
     FunctionToolResult,
+    HostedMCPTool,
+    ImageGenerationTool,
+    LocalShellCommandRequest,
+    LocalShellExecutor,
+    LocalShellTool,
+    MCPToolApprovalFunction,
+    MCPToolApprovalFunctionResult,
+    MCPToolApprovalRequest,
     Tool,
     WebSearchTool,
     default_tool_error_function,
@@ -92,6 +104,7 @@ from .tracing import (
     handoff_span,
     mcp_tools_span,
     set_trace_processors,
+    set_trace_provider,
     set_tracing_disabled,
     set_tracing_export_api_key,
     speech_group_span,
@@ -150,6 +163,7 @@ __all__ = [
     "ToolsToFinalOutputFunction",
     "ToolsToFinalOutputResult",
     "Runner",
+    "run_demo_loop",
     "Model",
     "ModelProvider",
     "ModelTracing",
@@ -166,6 +180,9 @@ __all__ = [
     "AgentsException",
     "InputGuardrailTripwireTriggered",
     "OutputGuardrailTripwireTriggered",
+    "DynamicPromptFunction",
+    "GenerateDynamicPromptData",
+    "Prompt",
     "MaxTurnsExceeded",
     "ModelBehaviorError",
     "UserError",
@@ -189,12 +206,12 @@ __all__ = [
     "ToolCallItem",
     "ToolCallOutputItem",
     "ReasoningItem",
-    "ModelResponse",
     "ItemHelpers",
     "RunHooks",
     "AgentHooks",
     "RunContextWrapper",
     "TContext",
+    "RunErrorDetails",
     "RunResult",
     "RunResultStreaming",
     "RunConfig",
@@ -206,8 +223,17 @@ __all__ = [
     "FunctionToolResult",
     "ComputerTool",
     "FileSearchTool",
+    "CodeInterpreterTool",
+    "ImageGenerationTool",
+    "LocalShellCommandRequest",
+    "LocalShellExecutor",
+    "LocalShellTool",
     "Tool",
     "WebSearchTool",
+    "HostedMCPTool",
+    "MCPToolApprovalFunction",
+    "MCPToolApprovalRequest",
+    "MCPToolApprovalFunctionResult",
     "function_tool",
     "Usage",
     "add_trace_processor",
@@ -220,6 +246,7 @@ __all__ = [
     "guardrail_span",
     "handoff_span",
     "set_trace_processors",
+    "set_trace_provider",
     "set_tracing_disabled",
     "speech_group_span",
     "transcription_span",

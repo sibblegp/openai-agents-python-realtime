@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import asyncio
 import dataclasses
 import inspect
 from collections.abc import Awaitable
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Callable, Generic, Literal, cast
 
+from openai.types.responses.response_prompt_param import ResponsePromptParam
 from typing_extensions import NotRequired, TypeAlias, TypedDict
 
 from .agent_output import AgentOutputSchemaBase
@@ -16,8 +18,9 @@ from .logger import logger
 from .mcp import MCPUtil
 from .model_settings import ModelSettings
 from .models.interface import Model
+from .prompts import DynamicPromptFunction, Prompt, PromptUtil
 from .run_context import RunContextWrapper, TContext
-from .tool import FunctionToolResult, Tool, function_tool
+from .tool import FunctionTool, FunctionToolResult, Tool, function_tool
 from .util import _transforms
 from .util._types import MaybeAwaitable
 
@@ -92,6 +95,12 @@ class Agent(Generic[TContext]):
     Can either be a string, or a function that dynamically generates instructions for the agent. If
     you provide a function, it will be called with the context and the agent instance. It must
     return a string.
+    """
+
+    prompt: Prompt | DynamicPromptFunction | None = None
+    """A prompt object (or a function that returns a Prompt). Prompts allow you to dynamically
+    configure the instructions, tools and other config for an agent outside of your code. Only
+    usable with OpenAI models, using the Responses API.
     """
 
     handoff_description: str | None = None
@@ -241,12 +250,37 @@ class Agent(Generic[TContext]):
 
         return None
 
-    async def get_mcp_tools(self) -> list[Tool]:
+    async def get_prompt(
+        self, run_context: RunContextWrapper[TContext]
+    ) -> ResponsePromptParam | None:
+        """Get the prompt for the agent."""
+        return await PromptUtil.to_model_input(self.prompt, run_context, self)
+
+    async def get_mcp_tools(
+        self, run_context: RunContextWrapper[TContext]
+    ) -> list[Tool]:
         """Fetches the available tools from the MCP servers."""
         convert_schemas_to_strict = self.mcp_config.get("convert_schemas_to_strict", False)
-        return await MCPUtil.get_all_function_tools(self.mcp_servers, convert_schemas_to_strict)
+        return await MCPUtil.get_all_function_tools(
+            self.mcp_servers, convert_schemas_to_strict, run_context, self
+        )
 
-    async def get_all_tools(self) -> list[Tool]:
+    async def get_all_tools(self, run_context: RunContextWrapper[Any]) -> list[Tool]:
         """All agent tools, including MCP tools and function tools."""
-        mcp_tools = await self.get_mcp_tools()
-        return mcp_tools + self.tools
+        mcp_tools = await self.get_mcp_tools(run_context)
+
+        async def _check_tool_enabled(tool: Tool) -> bool:
+            if not isinstance(tool, FunctionTool):
+                return True
+
+            attr = tool.is_enabled
+            if isinstance(attr, bool):
+                return attr
+            res = attr(run_context, self)
+            if inspect.isawaitable(res):
+                return bool(await res)
+            return bool(res)
+
+        results = await asyncio.gather(*(_check_tool_enabled(t) for t in self.tools))
+        enabled: list[Tool] = [t for t, ok in zip(self.tools, results) if ok]
+        return [*mcp_tools, *enabled]
